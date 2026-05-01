@@ -180,7 +180,18 @@ export function ExpenseTracker() {
         body: JSON.stringify(payload),
       });
       const data = (await response.json()) as AuthActionResponse;
-      if (!response.ok) throw new Error(data.message ?? "Authentication failed.");
+      if (!response.ok) {
+        let errorMsg = data.message ?? "Authentication failed.";
+        if (data.issues) {
+          const fieldErrors = Object.values(data.issues.fieldErrors).flat();
+          if (fieldErrors.length > 0) {
+            errorMsg = fieldErrors[0];
+          } else if (data.issues.formErrors.length > 0) {
+            errorMsg = data.issues.formErrors[0];
+          }
+        }
+        throw new Error(errorMsg);
+      }
       setOtpState({
         otpRequestId: data.otpRequestId ?? "",
         code: "",
@@ -465,6 +476,7 @@ export function ExpenseTracker() {
                       id="auth-password"
                       type="password"
                       required
+                      minLength={8}
                       placeholder="••••••••"
                       value={authForm.password}
                       onChange={(e) => setAuthForm((c) => ({ ...c, password: e.target.value }))}
@@ -477,6 +489,7 @@ export function ExpenseTracker() {
                         id="auth-confirm-password"
                         type="password"
                         required
+                        minLength={8}
                         placeholder="••••••••"
                         value={authForm.confirmPassword}
                         onChange={(e) =>

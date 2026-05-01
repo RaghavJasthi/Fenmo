@@ -45,4 +45,8 @@ export type AuthActionResponse = {
   otpRequestId?: string;
   developmentOtp?: string;
   message?: string;
+  issues?: {
+    fieldErrors: Record<string, string[]>;
+    formErrors: string[];
+  };
 };
