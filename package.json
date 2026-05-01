@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "render-build": "prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run"

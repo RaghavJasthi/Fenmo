@@ -135,16 +135,60 @@ npm test
 
 ## Deploying
 
-Recommended deployment target:
+Recommended deployment target for this submission:
 
-- Frontend and API: `Vercel`
-- Database: hosted `PostgreSQL` such as Neon, Supabase, or Railway Postgres
+- Frontend and API: `Render` Web Service
+- Database: `Render Postgres`
 
-Set `DATABASE_URL` in Vercel, then run a schema push or migration against the hosted database. To enable production auth, also set the Google and SMTP environment variables listed above.
+This repository includes a `render.yaml` blueprint that creates both the web service and Postgres database.
+
+### Render Blueprint Deploy
+
+1. Push the latest code to GitHub.
+2. In Render, create a new Blueprint instance from this repository.
+3. Render will use:
+
+```bash
+npm ci && npm run render-build
+```
+
+as the build command and:
+
+```bash
+npm run start
+```
+
+as the start command.
+
+4. During setup, provide the secret environment variables when prompted:
+
+- `GOOGLE_CLIENT_ID`
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+- `SMTP_HOST`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+
+`DATABASE_URL` is wired automatically from the Render Postgres service. `SMTP_PORT` defaults to `587`.
+
+If Google sign-in is enabled, add the deployed Render URL to the Google OAuth client's authorized JavaScript origins, for example:
+
+```text
+https://fenmo-expense-tracker.onrender.com
+```
+
+If SMTP is not configured, email/password auth still works for local development because the API returns `developmentOtp`. For a public deployed submission, SMTP should be configured so OTPs are emailed instead of exposed in the response.
 
 Live application link:
 
 - `Add your deployed URL here`
+
+## Submission Checklist
+
+- Include the GitHub repository link.
+- Include the Render live application link.
+- Mention that the app uses PostgreSQL with Prisma, account-scoped expenses, OTP email auth, optional Google sign-in, idempotent expense creation, filtering, sorting, and automated tests.
+- Mention the validation commands used: `npm test` and `npm run build`.
 
 ## Trade-Offs Due To Timebox
 
