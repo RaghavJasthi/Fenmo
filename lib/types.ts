@@ -23,3 +23,26 @@ export type ExpenseListResponse = {
   totalAmountMinor: number;
   count: number;
 };
+
+export type ExpenseSortOption =
+  | "date_desc"
+  | "date_asc"
+  | "amount_desc"
+  | "amount_asc";
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type SessionResponse = {
+  user: AuthUser | null;
+};
+
+export type AuthActionResponse = {
+  user?: AuthUser;
+  otpRequestId?: string;
+  developmentOtp?: string;
+  message?: string;
+};

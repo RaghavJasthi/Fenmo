@@ -1,6 +1,6 @@
 import { formatMinorAsCurrency, parseAmountToMinor } from "@/lib/money";
 import { createExpenseSchema, expenseQuerySchema } from "@/lib/validation";
-import type { Expense, ExpenseListResponse } from "@/lib/types";
+import type { Expense, ExpenseListResponse, ExpenseSortOption } from "@/lib/types";
 
 type ExpenseRecord = {
   id: string;
@@ -10,6 +10,7 @@ type ExpenseRecord = {
   date: Date;
   createdAt: Date;
   idempotencyKey: string;
+  userId: string;
 };
 
 export type CreateExpenseInput = {
@@ -18,6 +19,7 @@ export type CreateExpenseInput = {
   description?: string;
   date: string;
   idempotencyKey: string;
+  userId: string;
 };
 
 export type ListExpenseInput = {
@@ -25,22 +27,18 @@ export type ListExpenseInput = {
   sort?: string;
 };
 
-export type ExpenseSortOption =
-  | "date_desc"
-  | "date_asc"
-  | "amount_desc"
-  | "amount_asc";
-
 export interface ExpenseRepository {
-  findByIdempotencyKey(idempotencyKey: string): Promise<ExpenseRecord | null>;
+  findByIdempotencyKey(input: { idempotencyKey: string; userId: string }): Promise<ExpenseRecord | null>;
   createExpense(input: {
     amountMinor: number;
     category: string;
     description: string;
     date: Date;
     idempotencyKey: string;
+    userId: string;
   }): Promise<ExpenseRecord>;
   listExpenses(filter: {
+    userId: string;
     category?: string;
     sort: ExpenseSortOption;
   }): Promise<ExpenseRecord[]>;
@@ -51,7 +49,10 @@ export async function createExpense(
   input: CreateExpenseInput,
 ): Promise<Expense> {
   const parsed = createExpenseSchema.parse(input);
-  const existing = await repository.findByIdempotencyKey(parsed.idempotencyKey);
+  const existing = await repository.findByIdempotencyKey({
+    idempotencyKey: parsed.idempotencyKey,
+    userId: parsed.userId,
+  });
 
   if (existing) {
     return toExpenseDto(existing);
@@ -63,6 +64,7 @@ export async function createExpense(
     description: parsed.description ?? "",
     date: new Date(parsed.date),
     idempotencyKey: parsed.idempotencyKey,
+    userId: parsed.userId,
   });
 
   return toExpenseDto(created);
@@ -70,10 +72,11 @@ export async function createExpense(
 
 export async function listExpenses(
   repository: ExpenseRepository,
-  input: ListExpenseInput,
+  input: ListExpenseInput & { userId: string },
 ): Promise<ExpenseListResponse> {
   const parsed = expenseQuerySchema.parse(input);
   const records = await repository.listExpenses({
+    userId: input.userId,
     category: parsed.category,
     sort: parsed.sort,
   });

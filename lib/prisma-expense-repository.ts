@@ -3,9 +3,14 @@ import type { ExpenseRepository } from "@/lib/expense-service";
 import { prisma } from "@/lib/prisma";
 
 export const prismaExpenseRepository: ExpenseRepository = {
-  async findByIdempotencyKey(idempotencyKey) {
+  async findByIdempotencyKey({ idempotencyKey, userId }) {
     return prisma.expense.findUnique({
-      where: { idempotencyKey },
+      where: {
+        userId_idempotencyKey: {
+          userId,
+          idempotencyKey,
+        },
+      },
     });
   },
 
@@ -15,7 +20,7 @@ export const prismaExpenseRepository: ExpenseRepository = {
     });
   },
 
-  async listExpenses({ category, sort }) {
+  async listExpenses({ userId, category, sort }) {
     const orderByMap: Record<string, Prisma.ExpenseOrderByWithRelationInput[]> = {
       date_desc: [{ date: "desc" }, { createdAt: "desc" }],
       date_asc: [{ date: "asc" }, { createdAt: "asc" }],
@@ -24,7 +29,10 @@ export const prismaExpenseRepository: ExpenseRepository = {
     };
 
     return prisma.expense.findMany({
-      where: category ? { category } : undefined,
+      where: {
+        userId,
+        ...(category ? { category } : {}),
+      },
       orderBy: orderByMap[sort],
     });
   },

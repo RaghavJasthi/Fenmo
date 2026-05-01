@@ -11,11 +11,12 @@ function createInMemoryRepository(): ExpenseRepository {
     date: Date;
     createdAt: Date;
     idempotencyKey: string;
+    userId: string;
   }> = [];
 
   return {
     async findByIdempotencyKey(idempotencyKey) {
-      return records.find((item) => item.idempotencyKey === idempotencyKey) ?? null;
+      return records.find((item) => item.idempotencyKey === idempotencyKey.idempotencyKey && item.userId === idempotencyKey.userId) ?? null;
     },
     async createExpense(input) {
       const record = {
@@ -26,8 +27,10 @@ function createInMemoryRepository(): ExpenseRepository {
       records.push(record);
       return record;
     },
-    async listExpenses({ category, sort }) {
-      const filtered = [...records].filter((item) => (category ? item.category === category : true));
+    async listExpenses({ userId, category, sort }) {
+      const filtered = [...records].filter(
+        (item) => item.userId === userId && (category ? item.category === category : true),
+      );
 
       if (sort === "date_asc") {
         return filtered.sort((left, right) => left.date.getTime() - right.date.getTime());
@@ -62,6 +65,7 @@ describe("expense service", () => {
       description: "Lunch",
       date: "2025-01-11",
       idempotencyKey: "same-request",
+      userId: "user-1",
     };
 
     const first = await createExpense(repository, payload);
@@ -80,6 +84,7 @@ describe("expense service", () => {
       description: "Breakfast",
       date: "2025-01-01",
       idempotencyKey: "a",
+      userId: "user-1",
     });
     await createExpense(repository, {
       amount: "250.00",
@@ -87,6 +92,7 @@ describe("expense service", () => {
       description: "Cab",
       date: "2025-01-03",
       idempotencyKey: "b",
+      userId: "user-1",
     });
     await createExpense(repository, {
       amount: "80.00",
@@ -94,9 +100,11 @@ describe("expense service", () => {
       description: "Snack",
       date: "2025-01-02",
       idempotencyKey: "c",
+      userId: "user-1",
     });
 
     const result = await listExpenses(repository, {
+      userId: "user-1",
       category: "Food",
       sort: "date_desc",
     });
@@ -116,6 +124,7 @@ describe("expense service", () => {
       description: "Breakfast",
       date: "2025-01-01",
       idempotencyKey: "highest-a",
+      userId: "user-1",
     });
     await createExpense(repository, {
       amount: "450.00",
@@ -123,13 +132,44 @@ describe("expense service", () => {
       description: "Groceries",
       date: "2025-01-02",
       idempotencyKey: "highest-b",
+      userId: "user-1",
     });
 
     const result = await listExpenses(repository, {
+      userId: "user-1",
       sort: "amount_desc",
     });
 
     expect(result.expenses[0]?.description).toBe("Groceries");
     expect(result.expenses[1]?.description).toBe("Breakfast");
+  });
+
+  it("keeps records separated between users", async () => {
+    const repository = createInMemoryRepository();
+
+    await createExpense(repository, {
+      amount: "100.00",
+      category: "Food",
+      description: "Mine",
+      date: "2025-01-01",
+      idempotencyKey: "mine",
+      userId: "user-1",
+    });
+    await createExpense(repository, {
+      amount: "250.00",
+      category: "Food",
+      description: "Not mine",
+      date: "2025-01-03",
+      idempotencyKey: "other",
+      userId: "user-2",
+    });
+
+    const result = await listExpenses(repository, {
+      userId: "user-1",
+      sort: "date_desc",
+    });
+
+    expect(result.count).toBe(1);
+    expect(result.expenses[0]?.description).toBe("Mine");
   });
 });
