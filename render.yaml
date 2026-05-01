@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm ci && npm run render-build
+    buildCommand: npm ci --include=dev && npm run render-build
     startCommand: npm run render-start
     healthCheckPath: /
     autoDeployTrigger: commit
