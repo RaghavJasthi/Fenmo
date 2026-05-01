@@ -160,6 +160,8 @@ npm run start
 
 as the start command.
 
+The Render start command runs `prisma db push` before `next start` so the deployed database schema is created automatically.
+
 4. During setup, provide the secret environment variables when prompted:
 
 - `GOOGLE_CLIENT_ID`

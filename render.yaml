@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     buildCommand: npm ci && npm run render-build
-    startCommand: npm run start
+    startCommand: npm run render-start
     healthCheckPath: /
     autoDeployTrigger: commit
     envVars:
